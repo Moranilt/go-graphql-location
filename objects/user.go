@@ -2,23 +2,71 @@ package objects
 
 import "github.com/graphql-go/graphql"
 
-var User = graphql.ObjectConfig{
-	Name:        "User",
-	Description: "Get user info",
-	Fields: graphql.Fields{
-		"name": &graphql.Field{
-			Type:        graphql.String,
-			Description: "Users name",
-			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				return "Lily", nil
-			},
-		},
-		"age": &graphql.Field{
-			Type:        graphql.Int,
-			Description: "Users age",
-			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				return 22, nil
-			},
-		},
-	},
+type UserI interface {
+	GetQueryObject() *graphql.Object
+	GetMutationType() *graphql.Object
+}
+
+type UserType struct {
+	Id         int    `json:"_id"`
+	Created_at string `json:"created_at"`
+	Updated_at string `json:"updated_at"`
+	UserInput
+}
+type UserInput struct {
+	First_name string `json:"firstname" db:"first_name"`
+	Last_name  string `json:"lastname" db:"last_name"`
+	Phone      string `json:"phone" db:"phone"`
+	Email      string `json:"email" db:"email"`
+}
+
+func GetUserQueryObject() *graphql.Object {
+	return graphql.NewObject(graphql.ObjectConfig{
+		Name: "User",
+		Fields: graphql.FieldsThunk(func() graphql.Fields {
+			return graphql.Fields{
+				"firstname": &graphql.Field{
+					Type:        graphql.String,
+					Description: "Users firstname",
+				},
+				"lastname": &graphql.Field{
+					Type:        graphql.String,
+					Description: "Users lastname",
+				},
+				"phone": &graphql.Field{
+					Type:        graphql.String,
+					Description: "Phone number",
+				},
+				"email": &graphql.Field{
+					Type:        graphql.String,
+					Description: "Email",
+				},
+				"_id": &graphql.Field{
+					Type:        graphql.String,
+					Description: "users id",
+				},
+				"created_at": &graphql.Field{
+					Type:        graphql.String,
+					Description: "Registration date",
+				},
+				"updated_at": &graphql.Field{
+					Type:        graphql.String,
+					Description: "Updated profile date",
+				},
+			}
+		}),
+	})
+}
+
+func GetUserMutationType() *graphql.Object {
+	return graphql.NewObject(graphql.ObjectConfig{
+		Name: "UserType",
+		Fields: graphql.FieldsThunk(func() graphql.Fields {
+			return graphql.Fields{
+				"id": &graphql.Field{
+					Type: graphql.String,
+				},
+			}
+		}),
+	})
 }
