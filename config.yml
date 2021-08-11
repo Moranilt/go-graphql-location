@@ -1,0 +1,5 @@
+db:
+  USER: root
+  PASSWORD: 123
+  DATABASE: location
+  SSL_MODE: disable
