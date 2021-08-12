@@ -19,11 +19,11 @@ var QueryType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "User",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
-			"firstname": &graphql.Field{
+			"first_name": &graphql.Field{
 				Type:        graphql.String,
 				Description: "Users firstname",
 			},
-			"lastname": &graphql.Field{
+			"last_name": &graphql.Field{
 				Type:        graphql.String,
 				Description: "Users lastname",
 			},
@@ -51,11 +51,53 @@ var QueryType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
-var MutationType = graphql.NewObject(graphql.ObjectConfig{
-	Name: "UserType",
+var CreateMutationType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "CreateUser",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
 			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"access_token": &graphql.Field{
+				Type: graphql.String,
+			},
+			"refresh_token": &graphql.Field{
+				Type: graphql.String,
+			},
+		}
+	}),
+})
+
+var UpdateMutationType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "UpdateUser",
+	Fields: graphql.FieldsThunk(func() graphql.Fields {
+		return graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+		}
+	}),
+})
+
+var LogoutMutationType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "LogoutUser",
+	Fields: graphql.FieldsThunk(func() graphql.Fields {
+		return graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+		}
+	}),
+})
+
+var RefreshTokenMutationType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "RefreshToken",
+	Fields: graphql.FieldsThunk(func() graphql.Fields {
+		return graphql.Fields{
+			"access_token": &graphql.Field{
+				Type: graphql.String,
+			},
+			"refresh_token": &graphql.Field{
 				Type: graphql.String,
 			},
 		}

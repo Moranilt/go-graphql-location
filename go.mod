@@ -3,6 +3,10 @@ module github.com/Moranilt/go-graphql-location
 go 1.16
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-redis/redis/v8 v8.11.2
+	github.com/google/uuid v1.3.0
+	github.com/gorilla/mux v1.8.0
 	github.com/graphql-go/graphql v0.7.9
 	github.com/graphql-go/graphql-go-handler v0.2.3
 	github.com/graphql-go/handler v0.2.3 // indirect
