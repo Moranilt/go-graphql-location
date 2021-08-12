@@ -203,7 +203,6 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 				if err != nil {
 					return nil, fmt.Errorf("undefined user_id")
 				}
-				fmt.Println(userId)
 
 				updateColumns := []string{
 					"first_name",
@@ -221,10 +220,8 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 				}
 
 				queryString := strings.Join(result, ",")
-				fmt.Println(queryString)
 				updateUser := fmt.Sprintf("UPDATE users SET %s WHERE id=$1 RETURNING id", queryString)
 				queryResult := pgsql.QueryRowx(updateUser, userId)
-				fmt.Println(queryResult.Err())
 				var resultUserId int
 				queryResult.Scan(&resultUserId)
 
@@ -264,7 +261,6 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 				}
 
 				token, err := authorization.Refresh(authToken, client, ctx)
-				fmt.Println(err)
 				if err != nil {
 					return nil, err
 				}
