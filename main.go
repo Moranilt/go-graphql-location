@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Moranilt/go-graphql-location/objects"
+	"github.com/Moranilt/go-graphql-location/user"
 	"github.com/graphql-go/graphql"
 	gqlhandler "github.com/graphql-go/graphql-go-handler"
 	"github.com/jmoiron/sqlx"
@@ -65,9 +66,9 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 	Name: "GeoLocationRemember",
 	Fields: graphql.Fields{
 		"users": &graphql.Field{
-			Type: graphql.NewList(objects.GetUserQueryObject()),
+			Type: graphql.NewList(user.QueryType),
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				var users []objects.UserType
+				var users []user.UserType
 
 				err := pgsql.Select(&users, "SELECT * FROM users")
 
@@ -91,7 +92,7 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 	Name: "StoreSomething",
 	Fields: graphql.Fields{
 		"user": &graphql.Field{
-			Type: objects.GetUserMutationType(),
+			Type: user.MutationType,
 			Args: graphql.FieldConfigArgument{
 				"firstname": &graphql.ArgumentConfig{
 					Type: graphql.NewNonNull(graphql.String),
@@ -110,7 +111,7 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				args := params.Args
 
-				var Input objects.UserInput
+				var Input user.UserInput
 
 				if val, ok := args["firstname"]; ok {
 					Input.First_name = val.(string)
@@ -144,7 +145,7 @@ func main() {
 	err := initDb()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Connection to the database refused: %s", err)
 	}
 
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
