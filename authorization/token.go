@@ -46,7 +46,7 @@ func CreateToken(userId int, client *redis.Client, ctx context.Context) (*TokenD
 	atClaims["user_id"] = userId
 	atClaims["access_uuid"] = td.AccessUuid
 	atClaims["authorized"] = true
-	atClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	td.AccessToken, err = at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
 	if err != nil {

@@ -79,6 +79,12 @@ func Refresh(refresh_token string, client *redis.Client, ctx context.Context) (m
 			return nil, err
 		}
 
+		isContainsInRedis := client.Get(ctx, refreshUuid)
+
+		if isContainsInRedis.Err() != nil {
+			return nil, fmt.Errorf("refresh token is expired")
+		}
+
 		deleted, delErr := DeleteAuthFromRedis(refreshUuid, client, ctx)
 
 		if delErr != nil && deleted == 0 {
