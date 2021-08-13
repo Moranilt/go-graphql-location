@@ -23,7 +23,7 @@ func FetchAuth(authD *AccessDetails, client *redis.Client, ctx context.Context) 
 	return userId, nil
 }
 
-func CreateRedisAuth(userid uint64, td *TokenDetails, client *redis.Client, ctx context.Context) error {
+func createRedisAuth(userid uint64, td *TokenDetails, client *redis.Client, ctx context.Context) error {
 	at := time.Unix(td.AtExpires, 0) //converting Unix to UTC(to Time object)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
@@ -97,7 +97,7 @@ func Refresh(refresh_token string, client *redis.Client, ctx context.Context) (m
 			return nil, createErr
 		}
 
-		saveErr := CreateRedisAuth(userId, ts, client, ctx)
+		saveErr := createRedisAuth(userId, ts, client, ctx)
 
 		if saveErr != nil {
 			return nil, saveErr

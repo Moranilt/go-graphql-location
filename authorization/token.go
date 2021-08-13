@@ -64,7 +64,7 @@ func CreateToken(userId int, client *redis.Client, ctx context.Context) (*TokenD
 		return nil, err
 	}
 
-	err = CreateRedisAuth(uint64(userId), td, client, ctx)
+	err = createRedisAuth(uint64(userId), td, client, ctx)
 
 	if err != nil {
 		return nil, err
