@@ -18,6 +18,7 @@ import (
 	gqlhandler "github.com/graphql-go/graphql-go-handler"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v2"
 )
 
@@ -116,6 +117,40 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 var Mutation = graphql.NewObject(graphql.ObjectConfig{
 	Name: "StoreSomething",
 	Fields: graphql.Fields{
+		"userLogin": &graphql.Field{
+			Type: user.LoginMutationType,
+			Args: graphql.FieldConfigArgument{
+				"login": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+				"password": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+			},
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				args := params.Args
+				var user user.UserLogin
+
+				err := pgsql.Get(&user, "SELECT id, password FROM users WHERE login=$1", args["login"])
+				if err != nil {
+					return nil, err
+				}
+
+				isIncorrectPassword := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(args["password"].(string)))
+
+				if isIncorrectPassword != nil {
+					return nil, fmt.Errorf("authorization failed")
+				}
+
+				token, err := authorization.CreateToken(user.Id, client, params.Context)
+
+				if err != nil {
+					return nil, err
+				}
+
+				return map[string]interface{}{"access_token": token.AccessToken, "refresh_token": token.RefreshToken}, nil
+			},
+		},
 		"userCreate": &graphql.Field{
 			Type: user.CreateMutationType,
 			Args: graphql.FieldConfigArgument{
@@ -123,6 +158,12 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 					Type: graphql.NewNonNull(graphql.String),
 				},
 				"last_name": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+				"login": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+				"password": &graphql.ArgumentConfig{
 					Type: graphql.NewNonNull(graphql.String),
 				},
 				"phone": &graphql.ArgumentConfig{
@@ -142,6 +183,18 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 					Input.First_name = val.(string)
 				}
 
+				if val, ok := args["login"]; ok {
+					Input.Login = val.(string)
+				}
+
+				if val, ok := args["password"]; ok {
+					hashedPassword, err := bcrypt.GenerateFromPassword([]byte(val.(string)), bcrypt.DefaultCost)
+					if err != nil {
+						return nil, err
+					}
+					Input.Password = string(hashedPassword)
+				}
+
 				if val, ok := args["last_name"]; ok {
 					Input.Last_name = val.(string)
 				}
@@ -154,22 +207,21 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 					Input.Email = val.(string)
 				}
 
-				insertUser := `INSERT INTO users (first_name, last_name, phone, email) VALUES($1, $2, $3, $4) RETURNING id`
-				result := pgsql.QueryRowx(insertUser, Input.First_name, Input.Last_name, Input.Phone, Input.Email)
+				insertUser := `INSERT INTO users (first_name, last_name, login, password, phone, email) 
+				VALUES(:first_name, :last_name, :login, :password, :phone, :email) RETURNING id`
+				result, err := pgsql.NamedQuery(insertUser, Input)
+
+				if err != nil {
+					return nil, err
+				}
 
 				var lastId int
 				result.Scan(&lastId)
 
-				token, err := authorization.CreateToken(lastId)
+				token, err := authorization.CreateToken(lastId, client, params.Context)
 
 				if err != nil {
 					return nil, fmt.Errorf("unable to create token: %s", err)
-				}
-
-				saveErr := authorization.CreateRedisAuth(uint64(lastId), token, client, params.Context)
-
-				if saveErr != nil {
-					return nil, fmt.Errorf("error while adding redis key: %s", saveErr)
 				}
 
 				return map[string]interface{}{"id": lastId, "access_token": token.AccessToken, "refresh_token": token.RefreshToken}, nil

@@ -1,6 +1,7 @@
 package authorization
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
 
@@ -30,7 +32,7 @@ type AccessDetails struct {
 	UserId     uint64
 }
 
-func CreateToken(userId int) (*TokenDetails, error) {
+func CreateToken(userId int, client *redis.Client, ctx context.Context) (*TokenDetails, error) {
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.New().String()
@@ -61,6 +63,13 @@ func CreateToken(userId int) (*TokenDetails, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = CreateRedisAuth(uint64(userId), td, client, ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return td, nil
 }
 

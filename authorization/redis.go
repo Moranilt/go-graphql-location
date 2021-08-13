@@ -85,7 +85,7 @@ func Refresh(refresh_token string, client *redis.Client, ctx context.Context) (m
 			return nil, delErr
 		}
 
-		ts, createErr := CreateToken(int(userId))
+		ts, createErr := CreateToken(int(userId), client, ctx)
 
 		if createErr != nil {
 			return nil, createErr
