@@ -2,15 +2,22 @@ package user
 
 import "github.com/graphql-go/graphql"
 
+// inheritance is not working for structs with graphql.ResolverFunc
 type UserType struct {
 	Id         int    `json:"_id"`
 	Created_at string `json:"created_at"`
 	Updated_at string `json:"updated_at"`
-	UserInput
+	First_name string `json:"first_name" db:"first_name"`
+	Last_name  string `json:"last_name" db:"last_name"`
+	Phone      string `json:"phone" db:"phone"`
+	Email      string `json:"email" db:"email"`
+	// UserInput
 }
+
+// struct for storing users data
 type UserInput struct {
-	First_name string `json:"firstname" db:"first_name"`
-	Last_name  string `json:"lastname" db:"last_name"`
+	First_name string `json:"first_name" db:"first_name"`
+	Last_name  string `json:"last_name" db:"last_name"`
 	Phone      string `json:"phone" db:"phone"`
 	Email      string `json:"email" db:"email"`
 }
