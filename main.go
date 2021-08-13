@@ -37,7 +37,6 @@ type Config struct {
 var pgsql *sqlx.DB
 var config = getConfig()
 var client *redis.Client
-var ctx = context.Background()
 
 func initRedis(ctx context.Context) (*redis.Client, error) {
 	//Initializing redis
@@ -290,7 +289,7 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 					return nil, err
 				}
 
-				deleted, delErr := authorization.DeleteAuthFromRedis(token.AccessUuid, client, ctx)
+				deleted, delErr := authorization.DeleteAuthFromRedis(token.AccessUuid, client, params.Context)
 
 				if delErr != nil && deleted == 0 {
 					return nil, delErr

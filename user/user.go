@@ -12,6 +12,7 @@ type UserType struct {
 	Phone      string `json:"phone" db:"phone"`
 	Email      string `json:"email" db:"email"`
 	Login      string `json:"login" db:"login"`
+	Password   string `json:"password" db:"password"`
 	// UserInput
 }
 
