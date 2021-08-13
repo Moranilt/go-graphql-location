@@ -29,8 +29,8 @@ type DBConfig struct {
 }
 type Config struct {
 	DB             DBConfig
-	Secret         string `yaml:"secret_key"`
-	Secret_refresh string `yaml:"secret_refresh_key"`
+	ACCESS_SECRET  string `yaml:"secret_key"`
+	REFRESH_SECRET string `yaml:"secret_refresh_key"`
 }
 
 var pgsql *sqlx.DB
@@ -38,19 +38,21 @@ var config = getConfig()
 var client *redis.Client
 var ctx = context.Background()
 
-func initRedis() {
+func initRedis(ctx context.Context) (*redis.Client, error) {
 	//Initializing redis
 	dsn := os.Getenv("REDIS_DSN")
 	if len(dsn) == 0 {
 		dsn = "localhost:6379"
 	}
-	client = redis.NewClient(&redis.Options{
+	client := redis.NewClient(&redis.Options{
 		Addr: dsn, //redis port
 	})
 	_, err := client.Ping(ctx).Result()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
+	return client, err
 }
 
 func getConfig() *Config {
@@ -69,22 +71,20 @@ func getConfig() *Config {
 	return config
 }
 
-func initDb() error {
+func initDb() (*sqlx.DB, error) {
 
 	db_config := fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=%s",
 		config.DB.User, config.DB.Password, config.DB.Database, config.DB.Ssl,
 	)
 
-	db, e := sqlx.Connect("postgres", db_config)
+	db, err := sqlx.Connect("postgres", db_config)
 
-	if e != nil {
-		return e
+	if err != nil {
+		return nil, err
 	}
 
-	pgsql = db
-
-	return nil
+	return db, nil
 }
 
 var Query = graphql.NewObject(graphql.ObjectConfig{
@@ -98,7 +98,7 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 				err := pgsql.Select(&users, "SELECT * FROM users")
 
 				if err != nil {
-					log.Fatal(err)
+					return nil, err
 				}
 
 				return users, nil
@@ -163,13 +163,13 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 				token, err := authorization.CreateToken(lastId)
 
 				if err != nil {
-					log.Fatalf("Unable to create token: %s", err)
+					return nil, fmt.Errorf("unable to create token: %s", err)
 				}
 
-				saveErr := authorization.CreateRedisAuth(uint64(lastId), token, client, ctx)
+				saveErr := authorization.CreateRedisAuth(uint64(lastId), token, client, params.Context)
 
 				if saveErr != nil {
-					log.Fatalf("Error while adding redis key: %s", saveErr)
+					return nil, fmt.Errorf("error while adding redis key: %s", saveErr)
 				}
 
 				return map[string]interface{}{"id": lastId, "access_token": token.AccessToken, "refresh_token": token.RefreshToken}, nil
@@ -199,7 +199,7 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 					return nil, fmt.Errorf("auth required")
 				}
 
-				userId, err := authorization.FetchAuth(token, client, ctx)
+				userId, err := authorization.FetchAuth(token, client, params.Context)
 				if err != nil {
 					return nil, fmt.Errorf("undefined user_id")
 				}
@@ -260,7 +260,7 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 					return nil, fmt.Errorf("refresh token required")
 				}
 
-				token, err := authorization.Refresh(authToken, client, ctx)
+				token, err := authorization.Refresh(authToken, client, params.Context)
 				if err != nil {
 					return nil, err
 				}
@@ -275,6 +275,12 @@ func customHandler(schema *graphql.Schema) http.Handler {
 	r := mux.NewRouter()
 	r.Path("/").Handler(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var err error
+			client, err = initRedis(r.Context())
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer client.Close()
 			// store authorization header to context
 			next.ServeHTTP(
 				w,
@@ -297,14 +303,15 @@ func customHandler(schema *graphql.Schema) http.Handler {
 }
 
 func main() {
-	err := initDb()
-	initRedis()
-	os.Setenv("ACCESS_SECRET", config.Secret)
-	os.Setenv("REFRESH_SECRET", config.Secret_refresh)
-
+	var err error
+	pgsql, err = initDb()
 	if err != nil {
 		log.Fatalf("Connection to the database refused: %s", err)
 	}
+	defer pgsql.Close()
+
+	os.Setenv("ACCESS_SECRET", config.ACCESS_SECRET)
+	os.Setenv("REFRESH_SECRET", config.REFRESH_SECRET)
 
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
 		Query:    Query,
