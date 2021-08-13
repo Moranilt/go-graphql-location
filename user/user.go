@@ -11,6 +11,7 @@ type UserType struct {
 	Last_name  string `json:"last_name" db:"last_name"`
 	Phone      string `json:"phone" db:"phone"`
 	Email      string `json:"email" db:"email"`
+	Login      string `json:"login" db:"login"`
 	// UserInput
 }
 
@@ -20,6 +21,13 @@ type UserInput struct {
 	Last_name  string `json:"last_name" db:"last_name"`
 	Phone      string `json:"phone" db:"phone"`
 	Email      string `json:"email" db:"email"`
+	Login      string `json:"login" db:"login"`
+	Password   string `json:"password" db:"password"`
+}
+
+type UserLogin struct {
+	Id       int    `json:"id" db:"id"`
+	Password string `json:"password" db:"password"`
 }
 
 var QueryType = graphql.NewObject(graphql.ObjectConfig{
@@ -65,6 +73,20 @@ var CreateMutationType = graphql.NewObject(graphql.ObjectConfig{
 			"id": &graphql.Field{
 				Type: graphql.String,
 			},
+			"access_token": &graphql.Field{
+				Type: graphql.String,
+			},
+			"refresh_token": &graphql.Field{
+				Type: graphql.String,
+			},
+		}
+	}),
+})
+
+var LoginMutationType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "AuthUser",
+	Fields: graphql.FieldsThunk(func() graphql.Fields {
+		return graphql.Fields{
 			"access_token": &graphql.Field{
 				Type: graphql.String,
 			},
