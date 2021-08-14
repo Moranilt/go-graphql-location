@@ -32,6 +32,7 @@ type AccessDetails struct {
 	UserId     uint64
 }
 
+// generate tokens and store it to redis
 func CreateToken(userId int, client *redis.Client, ctx context.Context) (*TokenDetails, error) {
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
@@ -73,6 +74,7 @@ func CreateToken(userId int, client *redis.Client, ctx context.Context) (*TokenD
 	return td, nil
 }
 
+// get auth token from request object
 func GetAuthToken(r *http.Request) string {
 	bearerToken := r.Header.Get("Authorization")
 	if bearerToken == "" {

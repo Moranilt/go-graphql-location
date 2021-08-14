@@ -11,6 +11,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+// get user_id from access token
 func FetchAuth(authD *AccessDetails, client *redis.Client, ctx context.Context) (uint64, error) {
 	redisUserId, err := client.Get(ctx, authD.AccessUuid).Result()
 
@@ -23,6 +24,7 @@ func FetchAuth(authD *AccessDetails, client *redis.Client, ctx context.Context) 
 	return userId, nil
 }
 
+// create two keys for refresh token and access token in redis
 func createRedisAuth(userid uint64, td *TokenDetails, client *redis.Client, ctx context.Context) error {
 	at := time.Unix(td.AtExpires, 0) //converting Unix to UTC(to Time object)
 	rt := time.Unix(td.RtExpires, 0)
@@ -40,6 +42,7 @@ func createRedisAuth(userid uint64, td *TokenDetails, client *redis.Client, ctx 
 	return nil
 }
 
+// delete key from redis
 func DeleteAuthFromRedis(givenUuid string, client *redis.Client, ctx context.Context) (int64, error) {
 	deleted, err := client.Del(ctx, givenUuid).Result()
 	if err != nil {
@@ -48,6 +51,7 @@ func DeleteAuthFromRedis(givenUuid string, client *redis.Client, ctx context.Con
 	return deleted, nil
 }
 
+// use refresh token to create new access token and refresh token
 func Refresh(refresh_token string, client *redis.Client, ctx context.Context) (map[string]string, error) {
 	token, err := jwt.Parse(refresh_token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -81,17 +85,41 @@ func Refresh(refresh_token string, client *redis.Client, ctx context.Context) (m
 
 		isContainsInRedis := client.Get(ctx, refreshUuid)
 
+		value, err := isContainsInRedis.Result()
+		if err != nil {
+			return nil, err
+		}
+
+		// if value is uuid with length 36 prevent malicious atacks an d delete both of refresh keys
+		if len(value) >= 36 {
+			_, err := DeleteAuthFromRedis(refreshUuid, client, ctx)
+
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = DeleteAuthFromRedis(value, client, ctx)
+
+			if err != nil {
+				return nil, err
+			}
+
+			return nil, fmt.Errorf("unable to use refresh token multiple times")
+		}
+
 		if isContainsInRedis.Err() != nil {
 			return nil, fmt.Errorf("refresh token is expired")
 		}
 
-		deleted, delErr := DeleteAuthFromRedis(refreshUuid, client, ctx)
-
-		if delErr != nil && deleted == 0 {
-			return nil, delErr
-		}
-
 		ts, createErr := CreateToken(int(userId), client, ctx)
+
+		// set for old refresh keys uuid new value with new refreshUuid
+		// for delete it when it was used second time
+		errUpdateOldRefresh := client.Set(ctx, refreshUuid, ts.RefreshUuid, time.Hour*24*7)
+
+		if errUpdateOldRefresh.Err() != nil {
+			return nil, errUpdateOldRefresh.Err()
+		}
 
 		if createErr != nil {
 			return nil, createErr
