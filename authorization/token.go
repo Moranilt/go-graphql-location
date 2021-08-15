@@ -32,6 +32,11 @@ type AccessDetails struct {
 	UserId     uint64
 }
 
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 // generate tokens and store it to redis
 func CreateToken(userId int, client *redis.Client, ctx context.Context) (*TokenDetails, error) {
 	td := &TokenDetails{}

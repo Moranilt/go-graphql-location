@@ -71,9 +71,6 @@ var CreateMutationType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "CreateUser",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
-			"id": &graphql.Field{
-				Type: graphql.String,
-			},
 			"access_token": &graphql.Field{
 				Type: graphql.String,
 			},
