@@ -30,6 +30,7 @@ type Config struct {
 	DB             DBConfig
 	ACCESS_SECRET  string `yaml:"secret_key"`
 	REFRESH_SECRET string `yaml:"secret_refresh_key"`
+	RedisDSN       string `yaml:"redis_dsn"`
 }
 
 type Repository struct {
@@ -41,9 +42,9 @@ type Repository struct {
 var config *Config
 var repository *Repository
 
-func initRedis(ctx context.Context) (*redis.Client, error) {
+func initRedis(ctx context.Context, redisDSN string) (*redis.Client, error) {
 	//Initializing redis
-	dsn := os.Getenv("REDIS_DSN")
+	dsn := redisDSN
 	if len(dsn) == 0 {
 		dsn = "localhost:6379"
 	}
@@ -232,7 +233,7 @@ func main() {
 	}
 	defer pgsql.Close()
 
-	redisClient, err := initRedis(globalContext)
+	redisClient, err := initRedis(globalContext, config.RedisDSN)
 	if err != nil {
 		log.Fatal(err)
 	}
