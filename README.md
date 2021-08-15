@@ -1,1 +1,3 @@
-# go-graphql-location
+# Graphql API with Oauth2.0 authorization
+
+## Development...
