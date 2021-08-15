@@ -36,8 +36,6 @@ type Repository struct {
 	Pgsql         *sqlx.DB
 	RedisClient   *redis.Client
 	UserResolvers user.Resolverers
-	UserTypes     user.Types
-	UserArgs      user.Arguments
 }
 
 var config *Config
@@ -96,7 +94,7 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 	Name: "GeoLocationRemember",
 	Fields: graphql.Fields{
 		"users": &graphql.Field{
-			Type: graphql.NewList(repository.UserTypes.User),
+			Type: graphql.NewList(user.GetTypes().User),
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				users, err := repository.UserResolvers.AllUsers()
 
@@ -108,7 +106,7 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"user": &graphql.Field{
-			Type: repository.UserTypes.User,
+			Type: user.GetTypes().User,
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				user, err := repository.UserResolvers.User(params)
 
@@ -129,11 +127,11 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 })
 
 var Mutation = graphql.NewObject(graphql.ObjectConfig{
-	Name: "StoreSomething",
+	Name: "Mutations",
 	Fields: graphql.Fields{
 		"userLogin": &graphql.Field{
-			Type: repository.UserTypes.Login,
-			Args: repository.UserArgs.Login,
+			Type: user.GetTypes().Login,
+			Args: user.GetArguments().Login,
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				tokens, err := repository.UserResolvers.Login(params)
 
@@ -145,8 +143,8 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"userCreate": &graphql.Field{
-			Type: repository.UserTypes.Create,
-			Args: repository.UserArgs.Create,
+			Type: user.GetTypes().Create,
+			Args: user.GetArguments().Create,
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				tokens, err := repository.UserResolvers.Create(params)
 
@@ -158,8 +156,8 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"userUpdate": &graphql.Field{
-			Type: repository.UserTypes.Update,
-			Args: repository.UserArgs.Update,
+			Type: user.GetTypes().Update,
+			Args: user.GetArguments().Update,
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				result, err := repository.UserResolvers.Update(params)
 
@@ -171,7 +169,7 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"userLogout": &graphql.Field{
-			Type: repository.UserTypes.Logout,
+			Type: user.GetTypes().Logout,
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				result, err := repository.UserResolvers.Logout(params)
 
@@ -183,8 +181,8 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"userRefreshToken": &graphql.Field{
-			Type: repository.UserTypes.RefreshToken,
-			Args: repository.UserArgs.RefreshToken,
+			Type: user.GetTypes().RefreshToken,
+			Args: user.GetArguments().RefreshToken,
 			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 				tokens, err := repository.UserResolvers.RefreshToken(params)
 
@@ -247,8 +245,6 @@ func main() {
 		RedisClient:   redisClient,
 		Pgsql:         pgsql,
 		UserResolvers: user.GetResolvers(pgsql, redisClient),
-		UserTypes:     user.GetTypes(),
-		UserArgs:      user.GetArguments(),
 	}
 
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
