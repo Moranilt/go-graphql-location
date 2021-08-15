@@ -31,7 +31,27 @@ type UserLogin struct {
 	Password string `json:"password" db:"password"`
 }
 
-var QueryType = graphql.NewObject(graphql.ObjectConfig{
+type Types struct {
+	User         *graphql.Object
+	Create       *graphql.Object
+	Login        *graphql.Object
+	Update       *graphql.Object
+	Logout       *graphql.Object
+	RefreshToken *graphql.Object
+}
+
+func GetTypes() Types {
+	return Types{
+		User:         userType,
+		Create:       createType,
+		Login:        loginType,
+		Update:       updateType,
+		Logout:       logoutType,
+		RefreshToken: refreshTokenType,
+	}
+}
+
+var userType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "User",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
@@ -67,7 +87,7 @@ var QueryType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
-var CreateMutationType = graphql.NewObject(graphql.ObjectConfig{
+var createType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "CreateUser",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
@@ -81,7 +101,7 @@ var CreateMutationType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
-var LoginMutationType = graphql.NewObject(graphql.ObjectConfig{
+var loginType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "AuthUser",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
@@ -95,7 +115,7 @@ var LoginMutationType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
-var UpdateMutationType = graphql.NewObject(graphql.ObjectConfig{
+var updateType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "UpdateUser",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
@@ -106,7 +126,7 @@ var UpdateMutationType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
-var LogoutMutationType = graphql.NewObject(graphql.ObjectConfig{
+var logoutType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "LogoutUser",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{
@@ -117,7 +137,7 @@ var LogoutMutationType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
-var RefreshTokenMutationType = graphql.NewObject(graphql.ObjectConfig{
+var refreshTokenType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RefreshToken",
 	Fields: graphql.FieldsThunk(func() graphql.Fields {
 		return graphql.Fields{

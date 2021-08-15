@@ -2,7 +2,23 @@ package user
 
 import "github.com/graphql-go/graphql"
 
-var LoginArgs = graphql.FieldConfigArgument{
+type Arguments struct {
+	Login        graphql.FieldConfigArgument
+	Create       graphql.FieldConfigArgument
+	Update       graphql.FieldConfigArgument
+	RefreshToken graphql.FieldConfigArgument
+}
+
+func GetArguments() Arguments {
+	return Arguments{
+		Login:        loginArgs,
+		Create:       createArgs,
+		Update:       updateArgs,
+		RefreshToken: refreshTokenArgs,
+	}
+}
+
+var loginArgs = graphql.FieldConfigArgument{
 	"login": &graphql.ArgumentConfig{
 		Type: graphql.NewNonNull(graphql.String),
 	},
@@ -11,7 +27,7 @@ var LoginArgs = graphql.FieldConfigArgument{
 	},
 }
 
-var CreateArgs = graphql.FieldConfigArgument{
+var createArgs = graphql.FieldConfigArgument{
 	"first_name": &graphql.ArgumentConfig{
 		Type: graphql.NewNonNull(graphql.String),
 	},
@@ -32,7 +48,7 @@ var CreateArgs = graphql.FieldConfigArgument{
 	},
 }
 
-var UpdateArgs = graphql.FieldConfigArgument{
+var updateArgs = graphql.FieldConfigArgument{
 	"first_name": &graphql.ArgumentConfig{
 		Type: graphql.String,
 	},
@@ -47,7 +63,7 @@ var UpdateArgs = graphql.FieldConfigArgument{
 	},
 }
 
-var RefreshTokenArgs = graphql.FieldConfigArgument{
+var refreshTokenArgs = graphql.FieldConfigArgument{
 	"refresh_token": &graphql.ArgumentConfig{
 		Type: graphql.NewNonNull(graphql.String),
 	},
