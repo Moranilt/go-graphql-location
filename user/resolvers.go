@@ -15,6 +15,10 @@ type Resolverers interface {
 	// Returning a list of all users from table users
 	AllUsers() ([]UserType, error)
 
+	// Get information of a single user.
+	// It takes user_id from access_token
+	User(params graphql.ResolveParams) (*UserType, error)
+
 	// Login action.
 	// It takes login and password from graphql.ResolveParams, looking for user by login
 	// from table users, comparing hashed password from db with not hashed password from args.
@@ -41,12 +45,35 @@ type Resolverers interface {
 }
 
 type Resolvers struct {
-	pgsql  *sqlx.DB
-	client *redis.Client
+	pgsql       *sqlx.DB
+	RedisClient *redis.Client
 }
 
 func GetResolvers(pgsql *sqlx.DB, client *redis.Client) Resolverers {
-	return &Resolvers{pgsql: pgsql, client: client}
+	return &Resolvers{pgsql: pgsql, RedisClient: client}
+}
+
+func (r *Resolvers) User(params graphql.ResolveParams) (*UserType, error) {
+	requestToken := params.Context.Value(authorization.AuthHeaderKey)
+	token, err := authorization.ExtractTokenMetadata(requestToken.(string))
+
+	if err != nil {
+		return nil, err
+	}
+	userId, err := authorization.FetchAuth(token, r.RedisClient, params.Context)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var user UserType
+	err = r.pgsql.Get(&user, "SELECT * FROM users WHERE id=$1", userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (r *Resolvers) AllUsers() ([]UserType, error) {
@@ -76,7 +103,7 @@ func (r *Resolvers) Login(params graphql.ResolveParams) (*authorization.Tokens, 
 		return nil, fmt.Errorf("authorization failed")
 	}
 
-	token, err := authorization.CreateToken(user.Id, r.client, params.Context)
+	token, err := authorization.CreateToken(user.Id, r.RedisClient, params.Context)
 
 	if err != nil {
 		return nil, err
@@ -129,7 +156,7 @@ func (r *Resolvers) Create(params graphql.ResolveParams) (*authorization.Tokens,
 	var lastId int
 	result.Scan(&lastId)
 
-	token, err := authorization.CreateToken(lastId, r.client, params.Context)
+	token, err := authorization.CreateToken(lastId, r.RedisClient, params.Context)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to create token: %s", err)
@@ -146,7 +173,7 @@ func (r *Resolvers) Update(params graphql.ResolveParams) (interface{}, error) {
 		return nil, fmt.Errorf("auth required")
 	}
 
-	userId, err := authorization.FetchAuth(token, r.client, params.Context)
+	userId, err := authorization.FetchAuth(token, r.RedisClient, params.Context)
 	if err != nil {
 		return nil, fmt.Errorf("undefined user_id")
 	}
@@ -184,7 +211,7 @@ func (r *Resolvers) Logout(params graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
-	deleted, delErr := authorization.DeleteAuthFromRedis(token.AccessUuid, r.client, params.Context)
+	deleted, delErr := authorization.DeleteAuthFromRedis(token.AccessUuid, r.RedisClient, params.Context)
 
 	if delErr != nil && deleted == 0 {
 		return nil, delErr
@@ -199,7 +226,7 @@ func (r *Resolvers) RefreshToken(params graphql.ResolveParams) (*authorization.T
 		return nil, fmt.Errorf("refresh token required")
 	}
 
-	token, err := authorization.Refresh(authToken, r.client, params.Context)
+	token, err := authorization.Refresh(authToken, r.RedisClient, params.Context)
 	if err != nil {
 		return nil, err
 	}

@@ -105,6 +105,18 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 				return users, nil
 			},
 		},
+		"user": &graphql.Field{
+			Type: user.QueryType,
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				user, err := repository.UserResolvers.User(params)
+
+				if err != nil {
+					return nil, err
+				}
+
+				return user, nil
+			},
+		},
 		"location": &graphql.Field{
 			Type: graphql.NewObject(objects.Location),
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
