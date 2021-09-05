@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Moranilt/go-graphql-location/authorization"
+	"github.com/Moranilt/go-graphql-location/payments"
 	"github.com/go-redis/redis/v8"
 	"github.com/graphql-go/graphql"
 	"github.com/jmoiron/sqlx"
@@ -73,13 +74,22 @@ func (r *Resolvers) User(params graphql.ResolveParams) (*UserType, error) {
 		return nil, err
 	}
 
+	var payments []payments.Payment
+	err = r.pgsql.Select(&payments, "SELECT * FROM payments WHERE user_id=$1", userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user.Payments = payments
+
 	return &user, nil
 }
 
 func (r *Resolvers) AllUsers() ([]UserType, error) {
 	var users []UserType
 
-	err := r.pgsql.Select(&users, "SELECT * FROM users")
+	err := r.pgsql.Select(&users, "SELECT * FROM users ORDER BY first_name")
 
 	if err != nil {
 		return nil, err

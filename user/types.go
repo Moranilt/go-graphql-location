@@ -1,18 +1,23 @@
 package user
 
-import "github.com/graphql-go/graphql"
+import (
+	"github.com/Moranilt/go-graphql-location/payments"
+	"github.com/graphql-go/graphql"
+)
 
 // inheritance is not working for structs with graphql.ResolverFunc
 type UserType struct {
-	Id         int    `json:"_id"`
-	Created_at string `json:"created_at"`
-	Updated_at string `json:"updated_at"`
-	First_name string `json:"first_name" db:"first_name"`
-	Last_name  string `json:"last_name" db:"last_name"`
-	Phone      string `json:"phone" db:"phone"`
-	Email      string `json:"email" db:"email"`
-	Login      string `json:"login" db:"login"`
-	Password   string `json:"password" db:"password"`
+	Id         int                `json:"_id"`
+	Created_at string             `json:"created_at"`
+	Updated_at string             `json:"updated_at"`
+	First_name string             `json:"first_name" db:"first_name"`
+	Last_name  string             `json:"last_name" db:"last_name"`
+	Phone      string             `json:"phone" db:"phone"`
+	Email      string             `json:"email" db:"email"`
+	Login      string             `json:"login" db:"login"`
+	Password   string             `json:"password" db:"password"`
+	Last_login string             `json:"last_login" db:"last_login"`
+	Payments   []payments.Payment `json:"payments"`
 	// UserInput
 }
 
@@ -63,6 +68,10 @@ var userType = graphql.NewObject(graphql.ObjectConfig{
 				Type:        graphql.String,
 				Description: "Users lastname",
 			},
+			"last_login": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Users last login",
+			},
 			"phone": &graphql.Field{
 				Type:        graphql.String,
 				Description: "Phone number",
@@ -83,8 +92,33 @@ var userType = graphql.NewObject(graphql.ObjectConfig{
 				Type:        graphql.String,
 				Description: "Updated profile date",
 			},
+			"payments": &graphql.Field{
+				Type:        graphql.NewList(paymentType),
+				Description: "Users Payments",
+			},
 		}
 	}),
+})
+
+var paymentType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "PaymentType",
+	Fields: graphql.Fields{
+		"user_id": &graphql.Field{
+			Type: graphql.Int,
+		},
+		"amount": &graphql.Field{
+			Type: graphql.Float,
+		},
+		"payed": &graphql.Field{
+			Type: graphql.Boolean,
+		},
+		"payed_at": &graphql.Field{
+			Type: graphql.String,
+		},
+		"created_at": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
 })
 
 var createType = graphql.NewObject(graphql.ObjectConfig{

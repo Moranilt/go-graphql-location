@@ -1,7 +1,7 @@
 db:
   USER: root
   PASSWORD: 123
-  DATABASE: location
+  DATABASE: payments
   SSL_MODE: disable
 secret_key: kajshdhhyh21yg4jhbasuggdgsah8127%jsakjdh7jshda;,d
 secret_refresh_key: mskajhbcx%$@!mksja.;;ASJHD''askkj

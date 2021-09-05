@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/Moranilt/go-graphql-location/authorization"
-	"github.com/Moranilt/go-graphql-location/objects"
+	"github.com/Moranilt/go-graphql-location/payments"
 	"github.com/Moranilt/go-graphql-location/user"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
@@ -34,9 +34,10 @@ type Config struct {
 }
 
 type Repository struct {
-	Pgsql         *sqlx.DB
-	RedisClient   *redis.Client
-	UserResolvers user.Resolverers
+	Pgsql             *sqlx.DB
+	RedisClient       *redis.Client
+	UserResolvers     user.Resolverers
+	PaymentsResolvers payments.Resolverers
 }
 
 var config *Config
@@ -118,12 +119,6 @@ var Query = graphql.NewObject(graphql.ObjectConfig{
 				return user, nil
 			},
 		},
-		"location": &graphql.Field{
-			Type: graphql.NewObject(objects.Location),
-			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				return objects.Location, nil
-			},
-		},
 	},
 })
 
@@ -194,6 +189,19 @@ var Mutation = graphql.NewObject(graphql.ObjectConfig{
 				return tokens, nil
 			},
 		},
+		"createPayment": &graphql.Field{
+			Type: payments.GetTypes().CreatePayment,
+			Args: payments.GetArguments().Create,
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				result, err := repository.PaymentsResolvers.Create(params)
+
+				if err != nil {
+					return nil, err
+				}
+
+				return result, nil
+			},
+		},
 	},
 })
 
@@ -243,9 +251,10 @@ func main() {
 	os.Setenv("REFRESH_SECRET", config.REFRESH_SECRET)
 
 	repository = &Repository{
-		RedisClient:   redisClient,
-		Pgsql:         pgsql,
-		UserResolvers: user.GetResolvers(pgsql, redisClient),
+		RedisClient:       redisClient,
+		Pgsql:             pgsql,
+		UserResolvers:     user.GetResolvers(pgsql, redisClient),
+		PaymentsResolvers: payments.GetResolvers(pgsql, redisClient),
 	}
 
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
